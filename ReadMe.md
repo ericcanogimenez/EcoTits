@@ -1,0 +1,1 @@
+Información básica.

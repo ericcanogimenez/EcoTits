@@ -1,223 +1,210 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <title>Items</title>
-    <link
-      rel="stylesheet"
-      href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css"
-    />
-    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/4.12.1/firebase.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/4.12.1/firebase-firestore.js"></script>
-  </head>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>ECOTITS</title>
 
-  <body>
-    <div class="container p-5">
-      <div class="row">
-        <div class="col-8 offset-2" id="loginForm">
-          <form>
-            <div class="form-group row">
-              <label for="title" class="col-4 col-form-label">Correu electrònic:</label>
-              <div class="col-8">
-                <input type="email" class="form-control" id="loginEmail" />
-              </div>
-            </div>
-            <div class="form-group row">
-              <label for="content" class="col-4 col-form-label">Contrasenya:</label>
-              <div class="col-8">
-                <input type="password" class="form-control" id="loginPassword" />
-              </div>
-            </div>
-            <div class="form-group row">
-              <div class="offset-4 col-8">
-                <button type="button" id="newUser" class="btn btn-outline-primary float-right">
-                  OLEGUER PERROOOOO
-                </button>
-                <button type="button" id="login" class="btn btn-default float-right mr-3">
-                  Entrar
-                </button>
-              </div>
-            </div>
-          </form>
-        </div>
+<script src="https://www.gstatic.com/firebasejs/4.12.1/firebase.js"></script>
+<script src="https://www.gstatic.com/firebasejs/4.12.1/firebase-firestore.js"></script>
 
-        <div class="col-8 offset-2" id="signupForm" style="display: none">
-          <form>
-            <div class="form-group row">
-              <label for="title" class="col-4 col-form-label">Correu electrònic:</label>
-              <div class="col-8">
-                <input type="email" class="form-control" id="signupEmail" />
-              </div>
-            </div>
-            <div class="form-group row">
-              <label for="content" class="col-4 col-form-label">Contrasenya:</label>
-              <div class="col-8">
-                <input type="password" class="form-control" id="signupPassword" />
-              </div>
-            </div>
-            <div class="form-group row">
-              <label for="content" class="col-4 col-form-label">Confirmar contrasenya:</label>
-              <div class="col-8">
-                <input type="password" class="form-control" id="signupPasswordConfirm" />
-              </div>
-            </div>
-            <div class="form-group row">
-              <div class="offset-4 col-8">
-                <button type="button" id="signup" class="btn btn-default float-right">
-                  Enviar
-                </button>
-              </div>
-            </div>
-          </form>
-        </div>
+<style>
+body{
+    font-family: Arial;
+    background:#10b981;
+    color:white;
+    text-align:center;
+}
 
-        <div class="col-8 offset-2" id="itemsForm" style="display: none">
-          <form>
-            <div class="form-group row">
-              <label for="title" class="col-4 col-form-label">Títol:</label>
-              <div class="col-8">
-                <input type="text" class="form-control" id="title" />
-              </div>
-            </div>
-            <div class="form-group row">
-              <label for="content" class="col-4 col-form-label"
-                >Contingut:</label
-              >
-              <div class="col-8">
-                <input type="text" class="form-control" id="content" />
-              </div>
-            </div>
-            <div class="form-group row">
-              <div class="offset-4 col-8">
-                <button type="button" id="save" class="btn btn-default float-right">
-                  Guardar
-                </button>
-              </div>
-            </div>
-            <input type="hidden" id="elementId" />
-          </form>
-        </div>
+header{
+    padding:30px;
+}
 
-        <div class="col-2">
-          <div id="alert" role="alert"></div>
-        </div>
-      </div>
-      <div class="table-responsive">
-        <table class="table table-hover" id="listItems" style="display: none"></table>
-      </div>
-    </div>
-  </body>
-  <script language="javascript" src="js/config.js"></script>
-  <script language="javascript" src="js/firestore.js"></script>
-  <script language="javascript" src="js/items.js"></script>
-  <script language="javascript">
-    
-	// Funció per mostrar alertes a la UI
-    function showAlert(text, type) {
-      // Modifiquem el text i la classe CSS segons el tipus d'alerta
-      const alertEl = document.getElementById("alert");
-      alertEl.innerText = text;
-      alertEl.className = `alert ${type}`;
-      alertEl.style.display = "block";
+.map{
+    position:relative;
+    max-width:800px;
+    margin:auto;
+}
 
-      // Disparem un temporitzador per ocultar l'alerta a 2 segons
-      setTimeout(() => {
-        alertEl.style.display = "none";
-      }, 2000);
-    }
+.map img{
+    width:100%;
+}
 
-    // Quan la pàgina hagi carregat completament, carreguem els ítems
-    window.addEventListener("load", async () => {
-      await loadItems(); // Carrega i mostra la llista d'ítems
-    });
+.animal{
+    position:absolute;
+    font-size:30px;
+    cursor:pointer;
+}
 
-    // Handler per a l'inici de sessió
-    document.getElementById("login").addEventListener("click", async () => {
-      // Obtenim credencials del formulari
-      const email = document.getElementById("loginEmail").value;
-      const password = document.getElementById("loginPassword").value;
+.panda{top:45%;left:75%;}
+.tigre{top:50%;left:68%;}
+.elefante{top:60%;left:55%;}
+.gorila{top:55%;left:50%;}
+.lince{top:38%;left:45%;}
 
-      try {
-        // Intentem autenticar l'usuari amb Firebase Auth
-        await auth.signInWithEmailAndPassword(email, password);
+.card{
+    display:none;
+    background:white;
+    color:black;
+    padding:20px;
+    margin:30px auto;
+    max-width:600px;
+    border-radius:10px;
+}
 
-        // Si té èxit, mostrem missatge i canviem la UI
-        showAlert("Usuari autenticat", "alert-success");
-        document.getElementById("loginForm").style.display = "none";
-        document.getElementById("itemsForm").style.display = "block";
-        document.getElementById("listItems").style.display = "table";
-      } catch (error) {
-        // En cas d'error, mostrem alerta d'avís
-        showAlert("Error d’autenticació", "alert-danger");
-      }
-    });
+.card img{
+    width:100%;
+    border-radius:10px;
+}
 
-    // Handler per mostrar el formulari de registre d'usuari nou
-    document.getElementById("newUser").addEventListener("click", () => {
-      document.getElementById("loginForm").style.display = "none";
-      document.getElementById("signupForm").style.display = "block";
-    });
+button{
+    padding:10px 20px;
+    margin-top:10px;
+    cursor:pointer;
+}
+</style>
+</head>
 
-    // Handler per al registre d'un nou usuari
-    document.getElementById("signup").addEventListener("click", async () => {
-      // Llegim valors del formulari
-      const email = document.getElementById("signupEmail").value;
-      const password = document.getElementById("signupPassword").value;
-      const passwordConfirm = document.getElementById(
-        "signupPasswordConfirm"
-      ).value;
+<body>
 
-      // Validacions bàsiques de formulari
-      if (!email || email.indexOf("@") < 1) {
-        showAlert("Email incorrecte", "alert-danger");
-        return;
-      }
-      if (!password) {
-        showAlert("La contrasenya és obligatòria", "alert-danger");
-        return;
-      }
-      if (password.length < 8) {
-        showAlert("La contrasenya ha de tenir una longitud mínima de 8 caràcters", "alert-danger");
-        return;
-      }
-      if (password !== passwordConfirm) {
-        showAlert("Les contrasenyes no coincideixen", "alert-danger");
-        return;
-      }
+<header>
+<h1>🌿 ECOTITS</h1>
+<p>Protege la vida silvestre</p>
+</header>
 
-      try {
-        // Creem l'usuari amb Firebase Auth
-        await auth.createUserWithEmailAndPassword(email, password);
+<div>
+<input id="user" placeholder="Email">
+<button onclick="login()">Entrar</button>
+<p id="welcome"></p>
+</div>
 
-        // Si té èxit, mostrem missatge i tornem a la vista de login
-        showAlert("Usuari creat correctament", "alert-success");
-        document.getElementById("loginForm").style.display = "block";
-        document.getElementById("signupForm").style.display = "none";
-      } catch (error) {
-        // En cas d'error, mostrem alerta
-        showAlert("Error al intentar crear l'usuari", "alert-danger");
-      }
-    });
+<div class="map">
+<img src="https://upload.wikimedia.org/wikipedia/commons/8/80/World_map_-_low_resolution.svg">
 
-    // Handler per guardar o actualitzar un ítem
-    document.getElementById("save").addEventListener("click", async () => {
-      // Obtenim valors del formulari
-      const id = document.getElementById("elementId").value;
-      const title = document.getElementById("title").value;
-      const content = document.getElementById("content").value;
-      const doc = { title, content }; // Objecte amb les dades a desar
+<span class="animal panda" onclick="show('panda')">🐼</span>
+<span class="animal tigre" onclick="show('tigre')">🐯</span>
+<span class="animal elefante" onclick="show('elefante')">🐘</span>
+<span class="animal gorila" onclick="show('gorila')">🦍</span>
+<span class="animal lince" onclick="show('lince')">🐱</span>
+</div>
 
-      if (!id) {
-        // Si no hi ha ID, afegim un nou ítem
-        await addItem(doc);
-      } else {
-        // Si hi ha ID, actualitzem l'ítem existent
-        await updateItem(id, doc);
-      }
-    });
-	
-  </script>
+
+<div id="panda" class="card">
+<h2>Panda Gigante</h2>
+<img src="https://upload.wikimedia.org/wikipedia/commons/0/0f/Grosser_Panda.JPG">
+<p>Firmas: <span id="pandaCount">0</span></p>
+<button onclick="sign('panda')">Firmar petición</button>
+</div>
+
+<div id="tigre" class="card">
+<h2>Tigre</h2>
+<img src="https://upload.wikimedia.org/wikipedia/commons/5/56/Tiger.50.jpg">
+<p>Firmas: <span id="tigreCount">0</span></p>
+<button onclick="sign('tigre')">Firmar petición</button>
+</div>
+
+<div id="elefante" class="card">
+<h2>Elefante</h2>
+<img src="https://upload.wikimedia.org/wikipedia/commons/6/6e/Elephant_near_ndutu.jpg">
+<p>Firmas: <span id="elefanteCount">0</span></p>
+<button onclick="sign('elefante')">Firmar petición</button>
+</div>
+
+<div id="gorila" class="card">
+<h2>Gorila</h2>
+<img src="https://upload.wikimedia.org/wikipedia/commons/7/73/Silverback_Gorilla.jpg">
+<p>Firmas: <span id="gorilaCount">0</span></p>
+<button onclick="sign('gorila')">Firmar petición</button>
+</div>
+
+<div id="lince" class="card">
+<h2>Lince</h2>
+<img src="https://upload.wikimedia.org/wikipedia/commons/1/1d/Iberian_lynx2.jpg">
+<p>Firmas: <span id="linceCount">0</span></p>
+<button onclick="sign('lince')">Firmar petición</button>
+</div>
+
+<script>
+
+var config = {
+  apiKey: "AIzaSyBlzJUaylP4tOSnkmA6vV1ucjm9lC-eNbk",
+  authDomain: "ecotits-9f3b9.firebaseapp.com",
+  projectId: "ecotits-9f3b9",
+  storageBucket: "ecotits-9f3b9.firebasestorage.app",
+  messagingSenderId: "1000612840037",
+  appId: "1:1000612840037:web:fb7536d621d10de5ea3c8c"
+};
+
+firebase.initializeApp(config);
+
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+let animals=["panda","tigre","elefante","gorila","lince"];
+
+async function login(){
+let email = document.getElementById("user").value;
+let password = prompt("Contraseña");
+
+try{
+  const userCredential = await auth.signInWithEmailAndPassword(email,password);
+  document.getElementById("welcome").innerText="Bienvenido "+userCredential.user.email;
+}catch(error){
+  alert("Error login");
+}
+}
+
+function show(id){
+animals.forEach(a=>{
+document.getElementById(a).style.display="none";
+});
+document.getElementById(id).style.display="block";
+}
+
+async function sign(animal){
+
+let user = auth.currentUser;
+
+if(!user){
+alert("Primero inicia sesión");
+return;
+}
+
+try{
+
+await db.collection("firmas").add({
+_id: Date.now().toString(),
+animal_id: animal,
+nombre: user.email,
+email: user.email,
+fecha: new Date().toISOString().split("T")[0]
+});
+
+// actualizar contador
+const snapshot = await db.collection("firmas")
+.where("animal_id","==",animal)
+.get();
+
+document.getElementById(animal+"Count").innerText = snapshot.size;
+
+}catch(error){
+console.error(error);
+alert("Error al firmar");
+}
+
+}
+
+// 🔄 CARGAR FIRMAS
+window.onload = async () => {
+for(let animal of animals){
+const snapshot = await db.collection("firmas")
+.where("animal_id","==",animal)
+.get();
+
+document.getElementById(animal+"Count").innerText = snapshot.size;
+}
+}
+
+</script>
+
+</body>
 </html>

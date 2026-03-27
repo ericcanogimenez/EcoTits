@@ -278,6 +278,12 @@
                     <button onclick="handleSignup()">Registro</button>
                     <button onclick="handleLogin()">Entrar</button>
                     <button id="googleLoginBtn" onclick="handleGoogleLogin()">Google Login</button>
+                    
+                    
+                    <!-- 🔥 NUEVO -->
+                    <button onclick="handleResetPassword()" style="background:#f59e0b;">
+                    🔑 Olvidé contraseña
+                    </button>
                 </div>
             </div>
             <div id="userInfo">
@@ -418,6 +424,22 @@
             const pass = document.getElementById("password").value;
             if (!email || !pass) return alert("Rellena todo");
             try { await auth.signInWithEmailAndPassword(email, pass); } catch (e) { alert(e.message); }
+        }
+
+        // 🔥 AQUÍ MISMO (debajo)
+        async function handleResetPassword() {
+        const email = document.getElementById("email").value;
+
+        if (!email) {
+          return alert("Introduce tu email para recuperar la contraseña");
+        }
+
+        try {
+          await auth.sendPasswordResetEmail(email);
+          alert("📩 Email de recuperación enviado. Revisa tu correo.");
+          } catch (error) {
+            alert(error.message);
+          }
         }
 
         async function handleGoogleLogin() {

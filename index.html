@@ -1,177 +1,576 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <title>Items</title>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECOTITS - Protege la Vida Silvestre</title>
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-    <link rel="stylesheet"
-      href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css"/>
+    <style>
+        /* Definimos las variables para ambos modos */
+        :root {
+            /* MODO CLARO (Por defecto) */
+            --bg-body: #10b981;
+            --bg-card: #ffffff;
+            --text-main: #1f2937;
+            --text-white: #ffffff;
+            --accent: #059669;
+            --accent-hover: #047857;
+            --input-bg: #ffffff;
+            --border-color: #e5e7eb;
+            --map-filter: none;
+            --map-bg: rgba(255,255,255,0.05);
+        }
 
-    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+        /* MODO OSCURO */
+        [data-theme="dark"] {
+            --bg-body: #0f172a;
+            --bg-card: #1e293b;
+            --text-main: #f8fafc;
+            --text-white: #f8fafc;
+            --accent: #10b981;
+            --accent-hover: #059669;
+            --input-bg: #334155;
+            --border-color: #334155;
+            --map-filter: invert(0.9) hue-rotate(180deg) brightness(0.6) contrast(1.2);
+            --map-bg: #000;
+        }
 
-    <!-- 🔥 FIREBASE -->
-    <script src="https://www.gstatic.com/firebasejs/4.12.1/firebase.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/4.12.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/4.12.1/firebase-firestore.js"></script>
-  </head>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-white);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            transition: background-color 0.3s, color 0.3s;
+        }
 
-  <body>
-    <div class="container p-5">
-      <div class="row">
+        /* BOTÓN TOGGLE MODO OSCURO */
+        #themeToggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: var(--bg-card);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transition: all 0.3s;
+        }
 
-        <!-- LOGIN -->
-        <div class="col-8 offset-2" id="loginForm">
-          <form>
-            <div class="form-group row">
-              <label class="col-4 col-form-label">Email:</label>
-              <div class="col-8">
-                <input type="email" class="form-control" id="loginEmail" />
-              </div>
+        #themeToggle:hover { transform: scale(1.1); }
+
+        header {
+            padding: 2.5rem 2rem;
+            text-align: center;
+        }
+
+        h1 { margin: 0; font-size: 2.8rem; letter-spacing: -1px; }
+        header p { margin: 0.5rem 0; opacity: 0.9; }
+
+        .container {
+            width: 90%;
+            max-width: 1000px;
+            margin-bottom: 3rem;
+        }
+
+        #authSection {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* Ajuste para que el panel de auth se vea bien en modo oscuro */
+        [data-theme="dark"] #authSection {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+        }
+
+        .auth-inputs {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        input {
+            padding: 12px 16px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            background: var(--input-bg);
+            color: var(--text-main);
+            outline: none;
+        }
+
+        button {
+            padding: 12px 20px;
+            border-radius: 10px;
+            border: none;
+            background-color: var(--accent);
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        button:hover { background-color: var(--accent-hover); }
+
+        #googleLoginBtn {
+            background-color: transparent;
+            border: 1px solid #4285F4;
+            color: #4285F4;
+        }
+        #googleLoginBtn:hover { background-color: #4285F4; color: white; }
+
+        #userInfo {
+            display: none;
+            text-align: center;
+        }
+
+        .map-container {
+            position: relative;
+            width: 100%;
+            background: var(--map-bg);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            cursor: crosshair;
+            transition: background-color 0.3s;
+        }
+
+        .map-container img {
+            width: 100%;
+            display: block;
+            filter: var(--map-filter);
+            transition: filter 0.3s;
+            pointer-events: none;
+        }
+
+        .animal-marker {
+            position: absolute;
+            font-size: 2.2rem;
+            cursor: pointer;
+            transform: translate(-50%, -50%);
+            transition: transform 0.2s;
+            user-select: none;
+        }
+
+        .animal-marker:hover {
+            transform: translate(-50%, -50%) scale(1.3);
+            filter: drop-shadow(0 0 10px gold);
+        }
+
+        .temp-marker {
+            position: absolute;
+            font-size: 2rem;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
+        #animalCard {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--bg-card);
+            color: var(--text-main);
+            padding: 2.5rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            z-index: 100;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+
+        #animalCard img {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(3px);
+            z-index: 99;
+        }
+
+        .panel {
+            display: none;
+            background: var(--bg-card);
+            color: var(--text-main);
+            padding: 1.5rem;
+            border-radius: 16px;
+            margin-top: 2rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .panel h2 { margin-top: 0; color: var(--accent); }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border-color); }
+        th { color: var(--accent); font-size: 0.9rem; }
+
+        .form-group {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label { margin-bottom: 5px; font-weight: bold; opacity: 0.8; }
+
+        @media (max-width: 600px) {
+            .auth-inputs { flex-direction: column; align-items: stretch; }
+            .animal-marker { font-size: 1.8rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Botón para cambiar modo -->
+    <button id="themeToggle" onclick="toggleTheme()" title="Cambiar modo">🌓</button>
+
+    <header>
+        <h1>🌿 ECOTITS</h1>
+        <p>Plataforma de Conservación y Protección Animal</p>
+    </header>
+
+    <div class="container">
+        <!-- AUTH -->
+        <div id="authSection">
+            <div id="loginForm">
+                <div class="auth-inputs">
+                    <input type="email" id="email" placeholder="Email">
+                    <input type="password" id="password" placeholder="Contraseña">
+                    <button onclick="handleSignup()">Registro</button>
+                    <button onclick="handleLogin()">Entrar</button>
+                    <button id="googleLoginBtn" onclick="handleGoogleLogin()">Google Login</button>
+                </div>
             </div>
-
-            <div class="form-group row">
-              <label class="col-4 col-form-label">Password:</label>
-              <div class="col-8">
-                <input type="password" class="form-control" id="loginPassword" />
-              </div>
+            <div id="userInfo">
+                <span id="userDisplay">...</span>
+                <button onclick="handleLogout()" style="margin-left: 15px; padding: 5px 10px; background: #ef4444;">Salir</button>
             </div>
-
-            <div class="form-group row">
-              <div class="offset-4 col-8">
-                <button type="button" id="newUser" class="btn btn-outline-primary float-right">
-                  Registrar
-                </button>
-
-                <button type="button" id="login" class="btn btn-default float-right mr-3">
-                  Entrar
-                </button>
-
-                <!-- 🔥 GOOGLE -->
-                <button type="button" id="googleLogin" class="btn btn-danger float-right mr-3">
-                  Google
-                </button>
-              </div>
-            </div>
-          </form>
         </div>
 
-        <!-- SIGNUP -->
-        <div class="col-8 offset-2" id="signupForm" style="display:none">
-          <input type="email" id="signupEmail" placeholder="Email" class="form-control mb-2"/>
-          <input type="password" id="signupPassword" placeholder="Password" class="form-control mb-2"/>
-          <input type="password" id="signupPasswordConfirm" placeholder="Confirmar" class="form-control mb-2"/>
-          <button id="signup" class="btn btn-primary">Crear usuario</button>
+        <!-- MAPA -->
+        <div class="map-container" id="mapContainer">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/8/80/World_map_-_low_resolution.svg" alt="Mapa">
         </div>
 
-        <!-- ITEMS -->
-        <div class="col-8 offset-2" id="itemsForm" style="display:none">
-          <input type="text" id="title" placeholder="Título" class="form-control mb-2"/>
-          <input type="text" id="content" placeholder="Contenido" class="form-control mb-2"/>
-          <button id="save" class="btn btn-success">Guardar</button>
-          <input type="hidden" id="elementId"/>
+        <!-- PANEL CREADOR -->
+        <div id="creatorPanel" class="panel">
+            <h2>🐾 Añadir Animal</h2>
+            <p style="font-size: 0.8rem; opacity: 0.7;">Clica en el mapa para marcar la posición.</p>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="form-group">
+                    <label>Nombre</label>
+                    <input type="text" id="newAnimalName" placeholder="Ej: Lince">
+                </div>
+                <div class="form-group">
+                    <label>Icono / URL</label>
+                    <input type="text" id="newAnimalIcon" placeholder="Ej: 🐆">
+                </div>
+                <div class="form-group">
+                    <label>Latitud (%)</label>
+                    <input type="text" id="newAnimalLat" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Longitud (%)</label>
+                    <input type="text" id="newAnimalLng" readonly>
+                </div>
+            </div>
+            <button onclick="createNewAnimal()" style="width: 100%; margin-top: 10px;">Guardar</button>
         </div>
 
-        <div id="alert"></div>
-
-      </div>
-
-      <table id="listItems" class="table" style="display:none"></table>
+        <!-- PANEL ADMIN -->
+        <div id="adminPanel" class="panel">
+            <h2>🛡️ Usuarios</h2>
+            <div style="overflow-x: auto;">
+                <table id="usersTable">
+                    <thead>
+                        <tr>
+                            <th>Email</th>
+                            <th>Rol</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
-    <script src="js/config.js"></script>
-    <script src="js/firestore.js"></script>
-    <script src="js/items.js"></script>
+    <!-- MODAL -->
+    <div class="overlay" id="overlay" onclick="closeAnimalCard()"></div>
+    <div id="animalCard">
+        <h2 id="cardTitle">Nombre</h2>
+        <div id="cardMedia"></div>
+        <p>Firmas: <span id="cardSignatures" style="font-weight: bold; color: var(--accent);">0</span></p>
+        <button id="signBtn" onclick="signAnimal()" style="width: 100%;">✍️ Firmar</button>
+        <button onclick="closeAnimalCard()" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-main); margin-top: 10px; width: 100%;">Cerrar</button>
+    </div>
 
     <script>
-      function showAlert(text, type) {
-        const el = document.getElementById("alert");
-        el.innerText = text;
-        el.className = "alert " + type;
-        setTimeout(() => el.innerText = "", 2000);
-      }
-
-      // LOGIN EMAIL
-      document.getElementById("login").onclick = async () => {
-        const email = loginEmail.value;
-        const password = loginPassword.value;
-
-        try {
-          const res = await auth.signInWithEmailAndPassword(email, password);
-          await ensureUser(res.user);
-          loginSuccess();
-        } catch {
-          showAlert("Error login", "alert-danger");
-        }
-      };
-
-      // SIGNUP
-      document.getElementById("signup").onclick = async () => {
-        const email = signupEmail.value;
-        const password = signupPassword.value;
-
-        const res = await auth.createUserWithEmailAndPassword(email, password);
-        await ensureUser(res.user);
-
-        showAlert("Usuario creado", "alert-success");
-        loginForm.style.display = "block";
-        signupForm.style.display = "none";
-      };
-
-      // GOOGLE LOGIN
-      document.getElementById("googleLogin").onclick = async () => {
-        const provider = new firebase.auth.GoogleAuthProvider();
-
-        try {
-          const res = await auth.signInWithPopup(provider);
-          await ensureUser(res.user);
-          loginSuccess();
-        } catch (e) {
-          console.error(e);
-        }
-      };
-
-      // 🔥 guardar usuario en firestore
-      async function ensureUser(user) {
-        const ref = db.collection("usuarios").doc(user.uid);
-        const doc = await ref.get();
-
-        if (!doc.exists) {
-          await ref.set({
-            uid: user.uid,
-            email: user.email,
-            nombre: user.displayName || "Usuario",
-            createdAt: new Date()
-          });
-        }
-      }
-
-      function loginSuccess() {
-        loginForm.style.display = "none";
-        itemsForm.style.display = "block";
-        listItems.style.display = "table";
-        loadItems();
-      }
-
-      // MOSTRAR SIGNUP
-      newUser.onclick = () => {
-        loginForm.style.display = "none";
-        signupForm.style.display = "block";
-      };
-
-      // GUARDAR ITEM (con usuario)
-      save.onclick = async () => {
-        const user = auth.currentUser;
-
-        const doc = {
-          title: title.value,
-          content: content.value,
-          id_usuario: user.uid
+        // Configuración Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyAGOWJMlWWwqWW_M0AwYilhBIuBE5olWDg",
+            authDomain: "pro1-7115e.firebaseapp.com",
+            projectId: "pro1-7115e",
+            storageBucket: "pro1-7115e.firebasestorage.app",
+            messagingSenderId: "354009326153",
+            appId: "1:354009326153:web:3e7f4cae419b9cc1711598"
         };
 
-        await addItem(doc);
-      };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        let currentUser = null;
+        let currentRole = 'Visualizador';
+        let selectedAnimalId = null;
+        let tempCoords = null;
+
+        // --- FUNCIÓN MODO OSCURO / CLARO ---
+        function toggleTheme() {
+            const body = document.documentElement;
+            const currentTheme = body.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            body.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme); // Guardamos la elección del usuario
+            document.getElementById('themeToggle').innerText = newTheme === 'dark' ? '☀️' : '🌙';
+        }
+
+        // Cargar el tema guardado al abrir la web
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        document.getElementById('themeToggle').innerText = savedTheme === 'dark' ? '☀️' : '🌙';
+
+        // --- AUTH ---
+
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                currentUser = user;
+                await getAndSetUserRole(user);
+                loadAnimals();
+                if (currentRole === 'Administrador') loadUsers();
+            } else {
+                currentUser = null;
+                currentRole = 'Visualizador';
+                loadAnimals();
+            }
+            updateUI();
+        });
+
+        async function getAndSetUserRole(user) {
+            const doc = await db.collection("usuarios").doc(user.uid).get();
+            if (doc.exists) {
+                currentRole = doc.data().rol;
+            } else {
+                currentRole = 'Visualizador';
+                await db.collection("usuarios").doc(user.uid).set({ email: user.email, rol: currentRole });
+            }
+        }
+
+        async function handleSignup() {
+            const email = document.getElementById("email").value;
+            const pass = document.getElementById("password").value;
+            if (!email || !pass) return alert("Rellena todo");
+            try { await auth.createUserWithEmailAndPassword(email, pass); alert("¡Listo!"); } catch (e) { alert(e.message); }
+        }
+
+        async function handleLogin() {
+            const email = document.getElementById("email").value;
+            const pass = document.getElementById("password").value;
+            if (!email || !pass) return alert("Rellena todo");
+            try { await auth.signInWithEmailAndPassword(email, pass); } catch (e) { alert(e.message); }
+        }
+
+        async function handleGoogleLogin() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            try { await auth.signInWithPopup(provider); } catch (e) { alert(e.message); }
+        }
+
+        function handleLogout() { auth.signOut().then(() => location.reload()); }
+
+        function updateUI() {
+            const isLogged = !!currentUser;
+            document.getElementById("loginForm").style.display = isLogged ? "none" : "block";
+            document.getElementById("userInfo").style.display = isLogged ? "block" : "none";
+            if (isLogged) document.getElementById("userDisplay").innerText = `📧 ${currentUser.email} (${currentRole})`;
+
+            const canCreate = (currentRole === 'Creador' || currentRole === 'Administrador' || currentRole === 'editor');
+            document.getElementById("creatorPanel").style.display = (isLogged && canCreate) ? "block" : "none";
+            document.getElementById("adminPanel").style.display = (isLogged && currentRole === 'Administrador') ? "block" : "none";
+        }
+
+        // --- MAPA ---
+
+        document.getElementById('mapContainer').addEventListener('click', (e) => {
+            const canCreate = (currentRole === 'Creador' || currentRole === 'Administrador' || currentRole === 'editor');
+            if (!currentUser || !canCreate) return;
+
+            const rect = e.currentTarget.getBoundingClientRect();
+            const x = ((e.clientX - rect.left) / rect.width) * 100;
+            const y = ((e.clientY - rect.top) / rect.height) * 100;
+
+            tempCoords = { lat: y.toFixed(2), lng: x.toFixed(2) };
+            document.getElementById('newAnimalLat').value = tempCoords.lat;
+            document.getElementById('newAnimalLng').value = tempCoords.lng;
+
+            let tempMarker = document.getElementById('tempMarker');
+            if (!tempMarker) {
+                tempMarker = document.createElement('div');
+                tempMarker.id = 'tempMarker';
+                tempMarker.className = 'temp-marker';
+                e.currentTarget.appendChild(tempMarker);
+            }
+            tempMarker.style.top = y + "%";
+            tempMarker.style.left = x + "%";
+            tempMarker.innerText = document.getElementById('newAnimalIcon').value || '📍';
+        });
+
+        async function createNewAnimal() {
+            const name = document.getElementById("newAnimalName").value;
+            const icon = document.getElementById("newAnimalIcon").value;
+            if (!tempCoords || !name || !icon) return alert("Faltan datos");
+
+            try {
+                await db.collection("animales").add({
+                    nombre: name, icono: icon,
+                    lat: parseFloat(tempCoords.lat), lng: parseFloat(tempCoords.lng),
+                    autor: currentUser.uid
+                });
+                alert("Guardado!");
+                document.getElementById("newAnimalName").value = "";
+                document.getElementById("newAnimalIcon").value = "";
+                document.getElementById("tempMarker")?.remove();
+                tempCoords = null;
+            } catch (e) { alert(e.message); }
+        }
+
+        function loadAnimals() {
+            db.collection("animales").onSnapshot(snapshot => {
+                const map = document.getElementById("mapContainer");
+                map.querySelectorAll('.animal-marker').forEach(m => m.remove());
+
+                snapshot.forEach(doc => {
+                    const a = doc.data();
+                    const marker = document.createElement('div');
+                    marker.className = 'animal-marker';
+                    marker.style.top = a.lat + "%";
+                    marker.style.left = a.lng + "%";
+                    
+                    if (a.icono.startsWith('http')) {
+                        marker.innerHTML = `<img src="${a.icono}" style="width:35px; height:35px; border-radius:50%; border:2px solid var(--accent);">`;
+                    } else {
+                        marker.innerText = a.icono;
+                    }
+
+                    marker.onclick = (e) => { e.stopPropagation(); openAnimalCard(doc.id, a); };
+                    map.appendChild(marker);
+                });
+            });
+        }
+
+        // --- MODAL ---
+
+        async function openAnimalCard(id, animal) {
+            selectedAnimalId = id;
+            document.getElementById("cardTitle").innerText = animal.nombre;
+            const media = document.getElementById("cardMedia");
+            if (animal.icono.startsWith('http')) {
+                media.innerHTML = `<img src="${animal.icono}">`;
+            } else {
+                media.innerHTML = `<div style="font-size: 100px; margin-bottom: 15px;">${animal.icono}</div>`;
+            }
+
+            const snaps = await db.collection("firmas").where("animal_id", "==", id).get();
+            document.getElementById("cardSignatures").innerText = snaps.size;
+
+            const canSign = (currentRole === 'Visualizador' || currentRole === 'Creador');
+            document.getElementById("signBtn").style.display = (currentUser && canSign) ? "inline-block" : "none";
+
+            document.getElementById("overlay").style.display = "block";
+            document.getElementById("animalCard").style.display = "block";
+        }
+
+        function closeAnimalCard() {
+            document.getElementById("overlay").style.display = "none";
+            document.getElementById("animalCard").style.display = "none";
+        }
+
+        async function signAnimal() {
+            if (!currentUser) return;
+            try {
+                const check = await db.collection("firmas").where("animal_id", "==", selectedAnimalId).where("email", "==", currentUser.email).get();
+                if (!check.empty) return alert("Ya has firmado");
+                await db.collection("firmas").add({ email: currentUser.email, animal_id: selectedAnimalId });
+                alert("¡Gracias!");
+                closeAnimalCard();
+            } catch (e) { alert(e.message); }
+        }
+
+        // --- ADMIN ---
+
+        function loadUsers() {
+            db.collection("usuarios").onSnapshot(snapshot => {
+                const tbody = document.querySelector("#usersTable tbody");
+                tbody.innerHTML = "";
+                snapshot.forEach(doc => {
+                    const u = doc.data();
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `
+                        <td>${u.email}</td>
+                        <td><strong>${u.rol}</strong></td>
+                        <td>
+                            <button style="padding: 5px 10px; font-size: 0.7rem;" onclick="changeRole('${doc.id}', 'Visualizador')">Vis</button>
+                            <button style="padding: 5px 10px; font-size: 0.7rem;" onclick="changeRole('${doc.id}', 'Creador')">Cre</button>
+                            <button style="padding: 5px 10px; font-size: 0.7rem;" onclick="changeRole('${doc.id}', 'Administrador')">Adm</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            });
+        }
+
+        async function changeRole(uid, newRole) {
+            try { await db.collection("usuarios").doc(uid).update({ rol: newRole }); alert("Cambiado!"); if (uid === currentUser.uid) location.reload(); } catch (e) { alert(e.message); }
+        }
     </script>
-  </body>
+</body>
 </html>

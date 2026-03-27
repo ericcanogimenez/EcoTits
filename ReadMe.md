@@ -1,3 +1,1 @@
-Información básica.
-Algo nuevo.
-Otra vez.
+Información básica para poder llevar a cabo el uso de la aplicación

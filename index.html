@@ -278,6 +278,12 @@
                     <button onclick="handleSignup()">Registro</button>
                     <button onclick="handleLogin()">Entrar</button>
                     <button id="googleLoginBtn" onclick="handleGoogleLogin()">Google Login</button>
+                    
+                    
+                    <!-- 🔥 NUEVO -->
+                    <button onclick="handleResetPassword()" style="background:#f59e0b;">
+                    🔑 Olvidé contraseña
+                    </button>
                 </div>
             </div>
             <div id="userInfo">
@@ -318,7 +324,7 @@
 
         <!-- PANEL ADMIN -->
         <div id="adminPanel" class="panel">
-            <h2>🛡️ Usuarios</h2>
+            <h2>🛡️ Gestión de Usuarios</h2>
             <div style="overflow-x: auto;">
                 <table id="usersTable">
                     <thead>
@@ -364,6 +370,8 @@
         let selectedAnimalId = null;
         let tempCoords = null;
 
+        const ADMIN_EMAIL = "prova@mail.com";
+
         // --- FUNCIÓN MODO OSCURO / CLARO ---
         function toggleTheme() {
             const body = document.documentElement;
@@ -371,11 +379,10 @@
             const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
             
             body.setAttribute('data-theme', newTheme);
-            localStorage.setItem('theme', newTheme); // Guardamos la elección del usuario
+            localStorage.setItem('theme', newTheme);
             document.getElementById('themeToggle').innerText = newTheme === 'dark' ? '☀️' : '🌙';
         }
 
-        // Cargar el tema guardado al abrir la web
         const savedTheme = localStorage.getItem('theme') || 'light';
         document.documentElement.setAttribute('data-theme', savedTheme);
         document.getElementById('themeToggle').innerText = savedTheme === 'dark' ? '☀️' : '🌙';
@@ -397,6 +404,13 @@
         });
 
         async function getAndSetUserRole(user) {
+            // Forzar rol Administrador para la cuenta específica
+            if (user.email === ADMIN_EMAIL) {
+                currentRole = 'Administrador';
+                await db.collection("usuarios").doc(user.uid).set({ email: user.email, rol: 'Administrador' }, { merge: true });
+                return;
+            }
+
             const doc = await db.collection("usuarios").doc(user.uid).get();
             if (doc.exists) {
                 currentRole = doc.data().rol;
@@ -418,6 +432,15 @@
             const pass = document.getElementById("password").value;
             if (!email || !pass) return alert("Rellena todo");
             try { await auth.signInWithEmailAndPassword(email, pass); } catch (e) { alert(e.message); }
+        }
+
+        async function handleResetPassword() {
+            const email = document.getElementById("email").value;
+            if (!email) return alert("Introduce tu email para recuperar la contraseña");
+            try {
+                await auth.sendPasswordResetEmail(email);
+                alert("📩 Email de recuperación enviado. Revisa tu correo.");
+            } catch (error) { alert(error.message); }
         }
 
         async function handleGoogleLogin() {
@@ -553,14 +576,16 @@
                 tbody.innerHTML = "";
                 snapshot.forEach(doc => {
                     const u = doc.data();
+                    // No mostramos al propio administrador en la lista para evitar cambios accidentales
+                    if (u.email === ADMIN_EMAIL) return;
+
                     const tr = document.createElement("tr");
                     tr.innerHTML = `
                         <td>${u.email}</td>
                         <td><strong>${u.rol}</strong></td>
                         <td>
-                            <button style="padding: 5px 10px; font-size: 0.7rem;" onclick="changeRole('${doc.id}', 'Visualizador')">Vis</button>
-                            <button style="padding: 5px 10px; font-size: 0.7rem;" onclick="changeRole('${doc.id}', 'Creador')">Cre</button>
-                            <button style="padding: 5px 10px; font-size: 0.7rem;" onclick="changeRole('${doc.id}', 'Administrador')">Adm</button>
+                            <button style="padding: 5px 10px; font-size: 0.7rem; background: #6b7280;" onclick="changeRole('${doc.id}', 'Visualizador')">Visualizador</button>
+                            <button style="padding: 5px 10px; font-size: 0.7rem; background: #3b82f6;" onclick="changeRole('${doc.id}', 'Creador')">Editor/Creador</button>
                         </td>
                     `;
                     tbody.appendChild(tr);
@@ -569,7 +594,10 @@
         }
 
         async function changeRole(uid, newRole) {
-            try { await db.collection("usuarios").doc(uid).update({ rol: newRole }); alert("Cambiado!"); if (uid === currentUser.uid) location.reload(); } catch (e) { alert(e.message); }
+            try { 
+                await db.collection("usuarios").doc(uid).update({ rol: newRole }); 
+                alert("¡Rol actualizado con éxito!"); 
+            } catch (e) { alert(e.message); }
         }
     </script>
 </body>
